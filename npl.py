@@ -22,6 +22,12 @@ classes = (
     "zero",
     "UNKNOWN",
 )
+
+# below is the confusion matrix
+# rows are actual labels
+# columns are detected labels
+# the indices are classes
+# you can map them to classes labels defined in classes variable
 matrix_ = np.asarray(
    [[  960,    1,    8,    3,    7,     4,     0,    0,    6,   59,     1,     2,     1,     3,    5,     1,     5,     4,     1,    0,    9],
     [    4, 977,   0,   2,   7,   31,    1,   9,   7,   3,    4,    6,    0,    3,   5,    0,    7,    4,     5,   1,   13],
@@ -45,10 +51,18 @@ matrix_ = np.asarray(
     [    2,   1,   9,   1,   2,   12,   12,   6,   1,   0,    4,   21,    1,    6,   1,    4,   12,    2,     3,1066,    7],
     [  174, 197, 271, 135, 109,  238,  130, 127,  67,  99,  172,  163,  302,  382, 219,   72,  176,  101,   163, 245,11047]])
 
+print("===", matrix_[1][1], len(matrix_))
+a= []
+for cls, val in enumerate(matrix_):
+        a.append(matrix_[cls][cls])
+print(sum(a))
 
-
+print("====" * 10)
+print(np.sum(matrix_, axis=0))
 
 def calculate_accuracies(matrix, unknown_is_ignored=False):
+
+    
     if unknown_is_ignored:
         matrix = matrix[:-1]
     accuracies = []
@@ -58,13 +72,40 @@ def calculate_accuracies(matrix, unknown_is_ignored=False):
     return accuracies
 
 
+def calculate_precision(matrix, unknown_is_ignored=False):
+    if unknown_is_ignored:
+        matrix = matrix[:-1]
+    tp_fp_sum = np.sum(matrix, axis=0)
+    precisions = []
+    for cls, val in enumerate(matrix):
+        true_positive = matrix[cls][cls]
+        precisions.append(true_positive / tp_fp_sum[cls])
+
+    return precisions
+
+
+print("====" * 8, "\nAccuracy")
+
 accuracies_with_unknown = calculate_accuracies(matrix_)
 accuracies_without_unknown = calculate_accuracies(matrix_, unknown_is_ignored=True)
 
 print("All accuracies with unknown", accuracies_with_unknown)
 print("overall accuracy with unknown", sum(accuracies_with_unknown) / len(accuracies_with_unknown))
+
+
 print("\n\n\nAll accuracies without unknown", accuracies_without_unknown)
 print(
     "overall accuracy without unknown",
     sum(accuracies_without_unknown) / len(accuracies_without_unknown),
 )
+print("====" * 8, "\nPrecision")
+precisions_with_unknown = calculate_precision(matrix_)
+precisions_without_unknown = calculate_precision(matrix_, unknown_is_ignored=True)
+
+print("All precisions with unknown", precisions_with_unknown)
+print("overall precisions with unknown", sum(precisions_with_unknown) / len(precisions_with_unknown))
+
+print("\n\n\nAll precisions without unknown", precisions_without_unknown)
+print(
+    "overall precisions without unknown",
+    sum(precisions_without_unknown) / len(precisions_without_unknown))
