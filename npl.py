@@ -62,7 +62,7 @@ print(np.sum(matrix_, axis=0))
 
 def calculate_accuracies(matrix, unknown_is_ignored=False):
 
-    
+
     if unknown_is_ignored:
         matrix = matrix[:-1]
     accuracies = []
@@ -83,6 +83,16 @@ def calculate_precision(matrix, unknown_is_ignored=False):
 
     return precisions
 
+def calculate_recall(matrix, unknown_is_ignored=False):
+
+    
+    if unknown_is_ignored:
+        matrix = matrix[:-1]
+    recalls = []
+    for cls, val in enumerate(matrix):
+        recall = (val[cls] / sum(val)) * 100
+        recalls.append(recall)
+    return recalls
 
 print("====" * 8, "\nAccuracy")
 
@@ -109,3 +119,19 @@ print("\n\n\nAll precisions without unknown", precisions_without_unknown)
 print(
     "overall precisions without unknown",
     sum(precisions_without_unknown) / len(precisions_without_unknown))
+
+
+print("====" * 8, "\nRecall")
+
+recall_with_unknown = calculate_recall(matrix_)
+recall_without_unknown = calculate_recall(matrix_, unknown_is_ignored=True)
+
+print("All recall with unknown", recall_with_unknown)
+print("overall accuracy with unknown", sum(recall_with_unknown) / len(recall_with_unknown))
+
+
+print("\n\n\nAll recall without unknown", recall_without_unknown)
+print(
+    "overall accuracy without unknown",
+    sum(recall_without_unknown) / len(recall_without_unknown),
+)
