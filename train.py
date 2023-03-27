@@ -584,7 +584,7 @@ def main():
 
             apputils.save_checkpoint(epoch, args.cnn, model, optimizer=optimizer,
                                      scheduler=compression_scheduler, extras=checkpoint_extras,
-                                     is_best=is_best, name=checkpoint_name,
+                                     is_best=is_best, name="epoch__{}_{}".format(epoch, checkpoint_name),
                                      dir=msglogger.logdir)
 
         if compression_scheduler:
