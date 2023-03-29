@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 classes = (
     "up",
     "down",
@@ -59,7 +60,6 @@ print(sum(a))
 
 print("====" * 10)
 print(np.sum(matrix_, axis=0))
-
 def calculate_accuracies(matrix, unknown_is_ignored=False):
 
 
@@ -67,7 +67,7 @@ def calculate_accuracies(matrix, unknown_is_ignored=False):
         matrix = matrix[:-1]
     accuracies = []
     for cls, val in enumerate(matrix):
-        accuracy = (val[cls] / sum(val)) * 100
+        accuracy = (val[cls] / sum(val))
         accuracies.append(accuracy)
     return accuracies
 
@@ -79,7 +79,7 @@ def calculate_precision(matrix, unknown_is_ignored=False):
     precisions = []
     for cls, val in enumerate(matrix):
         true_positive = matrix[cls][cls]
-        precisions.append(true_positive / tp_fp_sum[cls])
+        precisions.append((true_positive / tp_fp_sum[cls]))
 
     return precisions
 
@@ -90,7 +90,7 @@ def calculate_recall(matrix, unknown_is_ignored=False):
         matrix = matrix[:-1]
     recalls = []
     for cls, val in enumerate(matrix):
-        recall = (val[cls] / sum(val)) * 100
+        recall = (val[cls] / sum(val))
         recalls.append(recall)
     return recalls
 
@@ -135,3 +135,28 @@ print(
     "overall accuracy without unknown",
     sum(recall_without_unknown) / len(recall_without_unknown),
 )
+
+def calculate_f1_score(beta, precisions, recalls):
+    f1s = []
+    for i in range(len(precisions)):
+        p = precisions[i]
+        r = recalls[i]
+        f1 = ((1 + beta) * ((p * r) / ((beta * p) + r)))
+        f1s.append(f1)
+    return f1s;
+
+beta = 0.5
+dictionary = {
+    "classes " : classes,
+    "accuracies_with_unknown" : accuracies_with_unknown,
+    "precisions_with_unknown" : precisions_with_unknown,
+    "recall_with_unknown" : recall_with_unknown,
+    "f1 score with unknown": calculate_f1_score(beta, precisions_with_unknown, recall_with_unknown),
+    "accuracies_without_unknown" : accuracies_without_unknown + [np.nan],
+    "precisions_without_unknown" : precisions_without_unknown + [np.nan],
+    "recall_without_unknown" : recall_without_unknown + [np.nan],
+    "f1 score without unknown": calculate_f1_score(beta, precisions_without_unknown, recall_without_unknown) + [np.nan],
+    }
+
+df = pd.DataFrame(dictionary)
+df.to_excel("model_evaluation_stats.xlsx")
