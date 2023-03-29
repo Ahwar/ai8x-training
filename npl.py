@@ -52,19 +52,25 @@ matrix_ = np.asarray(
     [    2,   1,   9,   1,   2,   12,   12,   6,   1,   0,    4,   21,    1,    6,   1,    4,   12,    2,     3,1066,    7],
     [  174, 197, 271, 135, 109,  238,  130, 127,  67,  99,  172,  163,  302,  382, 219,   72,  176,  101,   163, 245,11047]])
 
-print("===", matrix_[1][1], len(matrix_))
-a= []
-for cls, val in enumerate(matrix_):
-        a.append(matrix_[cls][cls])
-print(sum(a))
 
 print("====" * 10)
 print(np.sum(matrix_, axis=0))
 def calculate_accuracies(matrix, unknown_is_ignored=False):
+    """calculate per class accuracy of a confusion matrix 
 
+    Args:
+        matrix (np.ndarray): the confusion matrix with actual classes on y-axis,
+                            and predicted classes on x-axis
+        unknown_is_ignored (bool, optional): if you want to ignore last index to
+                            ignore unknown class. Defaults to False.
+
+    Returns:
+        accuracy (list): the list of accuracy by each class
+    """
 
     if unknown_is_ignored:
-        matrix = matrix[:-1]
+        matrix = np.delete(matrix, -1, 1)
+        matrix = np.delete(matrix, -1, 0)
     accuracies = []
     for cls, val in enumerate(matrix):
         accuracy = (val[cls] / sum(val))
@@ -73,8 +79,20 @@ def calculate_accuracies(matrix, unknown_is_ignored=False):
 
 
 def calculate_precision(matrix, unknown_is_ignored=False):
+    """calculate per class precision of a confusion matrix 
+
+    Args:
+        matrix (np.ndarray): the confusion matrix with actual classes on y-axis,
+                            and predicted classes on x-axis
+        unknown_is_ignored (bool, optional): if you want to ignore last index to
+                            ignore unknown class. Defaults to False.
+
+    Returns:
+        precisions (list): the list of precisions by each class
+    """
     if unknown_is_ignored:
-        matrix = matrix[:-1]
+        matrix = np.delete(matrix, -1, 1)
+        matrix = np.delete(matrix, -1, 0)
     tp_fp_sum = np.sum(matrix, axis=0)
     precisions = []
     for cls, val in enumerate(matrix):
@@ -84,10 +102,21 @@ def calculate_precision(matrix, unknown_is_ignored=False):
     return precisions
 
 def calculate_recall(matrix, unknown_is_ignored=False):
+    """calculate per class recall of a confusion matrix 
 
+    Args:
+        matrix (np.ndarray): the confusion matrix with actual classes on y-axis,
+                            and predicted classes on x-axis
+        unknown_is_ignored (bool, optional): if you want to ignore last index to
+                            ignore unknown class. Defaults to False.
+
+    Returns:
+        recall (list): the list of recall by each class
+    """
     
     if unknown_is_ignored:
-        matrix = matrix[:-1]
+        matrix = np.delete(matrix, -1, 1)
+        matrix = np.delete(matrix, -1, 0)
     recalls = []
     for cls, val in enumerate(matrix):
         recall = (val[cls] / sum(val))
