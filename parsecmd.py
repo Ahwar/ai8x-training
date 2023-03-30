@@ -198,6 +198,9 @@ def get_parser(model_names, dataset_names):
     parser.add_argument('--confusion', dest='display_confusion', default=False,
                         action='store_true',
                         help='Display the confusion matrix')
+    parser.add_argument('--save-confusion', dest='save_confusion', default=False,
+                        action='store_true',
+                        help='Save the confusion matrix as .npy file')
     parser.add_argument('--embedding', dest='display_embedding', default=False,
                         action='store_true',
                         help='Display embedding (using projector)')

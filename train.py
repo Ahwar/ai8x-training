@@ -1246,6 +1246,11 @@ def _validate(data_loader, model, criterion, loggers, args, epoch=-1, tflogger=N
 
         if args.display_confusion:
             msglogger.info('==> Confusion:\n%s\n', str(confusion.value()))
+            if args.save_confusion:
+                matrices_path = f"{msglogger.logdir}/confusion_matrices"
+                if not os.path.exists(matrices_path):
+                    os.makedirs(matrices_path)
+                np.save(f"{matrices_path}/confusion_matrix_epoch_{epoch}", confusion)
             if tflogger is not None:
                 cf = nnplot.confusion_matrix(confusion.value(), args.labels)
                 tflogger.tblogger.writer.add_image('Validation/ConfusionMatrix', cf, epoch,
