@@ -728,7 +728,7 @@ def KWS_35_get_unquantized_datasets(data, load_train=True, load_test=True):
 datasets = [
     {
         'name': 'KWS',  # 6 keywords
-        'input': (512, 64),
+        'input': (128, 128),
         'output': ('up', 'down', 'left', 'right', 'stop', 'go', 'UNKNOWN'),
         'weight': (1, 1, 1, 1, 1, 1, 0.06),
         'loader': KWS_get_datasets,
