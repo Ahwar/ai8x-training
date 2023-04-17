@@ -605,8 +605,8 @@ def KWS_get_datasets(data, load_train=True, load_test=True, num_classes=6):
 
     The dataset is loaded from the archive file, so the file is required for this version.
 
-    The dataset originally includes 30 keywords. A dataset is formed with 7 or 21 classes which
-    includes 6 or 20 of the original keywords and the rest of the
+    The dataset originally includes 30 keywords. A dataset is formed with 2, 7 or 21 classes which
+    includes 1, 6 or 20 of the original keywords and the rest of the
     dataset is used to form the last class, i.e class of the unknowns.
     To further improve the detection of unknown words, the librispeech dataset is also downloaded
     and converted to 1 second segments to be used as unknowns as well.
@@ -623,7 +623,7 @@ def KWS_get_datasets(data, load_train=True, load_test=True, num_classes=6):
         ai8x.normalize(args=args)
     ])
 
-    if num_classes in (6, 20):
+    if num_classes in (1, 6, 20):
         classes = next((e for _, e in enumerate(datasets)
                         if len(e['output']) - 1 == num_classes))['output'][:-1]
     else:
@@ -674,6 +674,26 @@ def KWS_20_get_datasets(data, load_train=True, load_test=True):
     0.8 and 1.3, -0.1 and 0.1, 0 and 1, respectively.
     """
     return KWS_get_datasets(data, load_train, load_test, num_classes=20)
+
+def KWS_binary_get_datasets(data, load_train=True, load_test=True):
+    """
+    Load the folded 1D version of SpeechCom dataset for 1 class
+
+    The dataset is loaded from the archive file, so the file is required for this version.
+
+    The dataset originally includes 35 keywords. A dataset is formed with 2 classes which includes
+    1 of the original keywords and the rest of the dataset is used to form the last class,
+    i.e class of the unknowns.
+    To further improve the detection of unknown words, the librispeech dataset is also downloaded
+    and converted to 1 second segments to be used as unknowns as well.
+    The dataset is split into training+validation and test sets. 90:10 training+validation:test
+    split is used by default.
+
+    Data is augmented to 3x duplicate data by random stretch/shift and randomly adding noise where
+    the stretching coefficient, shift amount and noise variance are randomly selected between
+    0.8 and 1.3, -0.1 and 0.1, 0 and 1, respectively.
+    """
+    return KWS_get_datasets(data, load_train, load_test, num_classes=1)
 
 
 def KWS_get_unquantized_datasets(data, load_train=True, load_test=True, num_classes=6):
@@ -732,6 +752,13 @@ datasets = [
         'output': ('up', 'down', 'left', 'right', 'stop', 'go', 'UNKNOWN'),
         'weight': (1, 1, 1, 1, 1, 1, 0.06),
         'loader': KWS_get_datasets,
+    },
+    {
+        'name': 'KWS_1',  # 1 keyword
+        'input': (128, 128),
+        'output': ('up', 'UNKNOWN'),
+        'weight': (1, 0.06),
+        'loader': KWS_binary_get_datasets,
     },
     {
         'name': 'KWS_20',  # 20 keywords
