@@ -18,3 +18,7 @@
 /super-linter.log
 /super-linter.report
 /venv/
+board_venv
+.idea
+cutted_keyword_files
+keyword_files

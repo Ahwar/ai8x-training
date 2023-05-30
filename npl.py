@@ -34,7 +34,7 @@ exp2 = "logs/evaluate_exp002_1unknown_kws20_v3_400e_adamo_0-001lr_256b_nobias_KW
 exp4 = "logs/evaluate_exp004_0unknown_kws20_v3_400e_adamo_0-001lr_256b_nobias_KWS_20dataset___2023.03.31-083133/confusion_matrices/confusion_matrix_epoch_-1.npy"
 res = "logs/evaluate_resume_kws20_v3_400e_adamo_0-001lr_256b_nobias_KWS20dataset___2023.04.03-080130/confusion_matrices/confusion_matrix_epoch_-1.npy"
 res260 = "logs/evaluateepoch250_resume_kws20_v3_400e_adamo_0-001lr_256b_nobias_KWS20dataset___2023.04.05-131247/confusion_matrices/confusion_matrix_epoch_-1.npy"
-matrix_ = np.load(res260)
+matrix_ = np.load(exp2)
 
 
 print("====" * 10)
@@ -110,50 +110,7 @@ def calculate_recall(matrix, unknown_is_ignored=False):
         recalls.append(recall)
     return recalls
 
-
-print("====" * 8, "\nAccuracy")
-
-accuracies_with_unknown = calculate_accuracies(matrix_)
-accuracies_without_unknown = calculate_accuracies(matrix_, unknown_is_ignored=True)
-
-print("overall accuracy with unknown", accuracies_with_unknown)
-print(
-    "overall accuracy without unknown",
-    accuracies_without_unknown,
-)
-print("====" * 8, "\nPrecision")
-precisions_with_unknown = calculate_precision(matrix_)
-precisions_without_unknown = calculate_precision(matrix_, unknown_is_ignored=True)
-
-print("Per class precisions with unknown", precisions_with_unknown)
-print(
-    "overall precisions with unknown", sum(precisions_with_unknown) / len(precisions_with_unknown)
-)
-
-print("\n\n\nPer class precisions without unknown", precisions_without_unknown)
-print(
-    "overall precisions without unknown",
-    sum(precisions_without_unknown) / len(precisions_without_unknown),
-)
-
-
-print("====" * 8, "\nRecall")
-
-recall_with_unknown = calculate_recall(matrix_)
-recall_without_unknown = calculate_recall(matrix_, unknown_is_ignored=True)
-
-print("Per class recall with unknown", recall_with_unknown)
-print("overall recall with unknown", sum(recall_with_unknown) / len(recall_with_unknown))
-
-
-print("\n\n\nPer class recall without unknown", recall_without_unknown)
-print(
-    "overall recall without unknown",
-    sum(recall_without_unknown) / len(recall_without_unknown),
-)
-
-
-def calculate_f1_score(beta, precisions, recalls):
+def calculate_f_beta_score(beta, precisions, recalls):
     f1s = []
     for i in range(len(precisions)):
         p = precisions[i]
@@ -162,31 +119,83 @@ def calculate_f1_score(beta, precisions, recalls):
         f1s.append(f1)
     return f1s
 
+def calculate_f1_score(precisions, recalls):
+    precision = sum(precisions) / len(precisions)
+    recall = sum(recalls) / len(recalls)
+    f1 = 2 * ((precision * recall) / (precision + recall))
+    return f1
 
-beta = 0.5
-dictionary = {
-    "classes ": classes,
-    "precisions_with_unknown": precisions_with_unknown,
-    "recall_with_unknown": recall_with_unknown,
-    "f1 score with unknown": calculate_f1_score(
-        beta, precisions_with_unknown, recall_with_unknown
-    ),
-    "precisions_without_unknown": precisions_without_unknown + [np.nan],
-    "recall_without_unknown": recall_without_unknown + [np.nan],
-    "f1 score without unknown": calculate_f1_score(
-        beta, precisions_without_unknown, recall_without_unknown
+
+
+
+def test_function():
+    print("====" * 8, "\nAccuracy")
+
+    accuracies_with_unknown = calculate_accuracies(matrix_)
+    accuracies_without_unknown = calculate_accuracies(matrix_, unknown_is_ignored=True)
+
+    print("overall accuracy with unknown", accuracies_with_unknown)
+    print(
+        "overall accuracy without unknown",
+        accuracies_without_unknown,
     )
-    + [np.nan],
-}
+    print("====" * 8, "\nPrecision")
+    precisions_with_unknown = calculate_precision(matrix_)
+    precisions_without_unknown = calculate_precision(matrix_, unknown_is_ignored=True)
 
-df = pd.DataFrame(dictionary)
-# calculate the mean values of each column
-mean_values = df.mean(axis=0)
+    print("Per class precisions with unknown", precisions_with_unknown)
+    print(
+        "overall precisions with unknown", sum(precisions_with_unknown) / len(precisions_with_unknown)
+    )
 
-# append the mean values as a new row to the DataFrame
-df = df.append(mean_values, ignore_index=True)
-df = df.round(5)
-out = "resume260_model_evaluation_stats"
-df.to_excel(out + ".xlsx", index=False)
-df.to_csv(out + ".csv", index=False)
-df.to_html(out + ".html", index=False)
+    print("\n\n\nPer class precisions without unknown", precisions_without_unknown)
+    print(
+        "overall precisions without unknown",
+        sum(precisions_without_unknown) / len(precisions_without_unknown),
+    )
+
+
+    print("====" * 8, "\nRecall")
+
+    recall_with_unknown = calculate_recall(matrix_)
+    recall_without_unknown = calculate_recall(matrix_, unknown_is_ignored=True)
+
+    print("Per class recall with unknown", recall_with_unknown)
+    print("overall recall with unknown", sum(recall_with_unknown) / len(recall_with_unknown))
+
+
+    print("\n\n\nPer class recall without unknown", recall_without_unknown)
+    print(
+        "overall recall without unknown",
+        sum(recall_without_unknown) / len(recall_without_unknown),
+    )
+
+
+    beta = 0.5
+    dictionary = {
+        "classes ": classes,
+        "precisions_with_unknown": precisions_with_unknown,
+        "recall_with_unknown": recall_with_unknown,
+        # "f1 score with unknown": calculate_f1_score(
+        #     precisions_with_unknown, recall_with_unknown
+        # ),
+        "precisions_without_unknown": precisions_without_unknown + [np.nan],
+        "recall_without_unknown": recall_without_unknown + [np.nan],
+        # "f1 score without unknown": calculate_f1_score(
+        #     beta, precisions_without_unknown, recall_without_unknown
+        # )
+        # + [np.nan],
+    }
+    df = pd.DataFrame(dictionary)
+    # calculate the mean values of each column
+    mean_values = df.mean(axis=0)
+
+    # append the mean values as a new row to the DataFrame
+    df = df.append(mean_values, ignore_index=True)
+    df = df.round(5)
+    out = "exp009_model_evaluation_stats"
+    df.to_excel(out + ".xlsx", index=False)
+    df.to_csv(out + ".csv", index=False)
+    df.to_html(out + ".html", index=False)
+
+# test_function()

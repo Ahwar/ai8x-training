@@ -115,6 +115,7 @@ import sample
 from losses.multiboxloss import MultiBoxLoss
 from nas import parse_nas_yaml
 from utils import object_detection_utils, parse_obj_detection_yaml
+from npl import calculate_recall, calculate_precision, calculate_f1_score
 
 # from range_linear_ai84 import PostTrainLinearQuantizerAI84
 
@@ -544,7 +545,11 @@ def main():
                     checkpoint_name = f'nas_stg{stage}_lev{level}'
 
             with collectors_context(activations_collectors["valid"]) as collectors:
-                top1, top5, vloss, mAP = validate(val_loader, model, criterion, [pylogger],
+                if args.display_confusion:
+                    top1, top5, vloss, mAP, f1, average_precisions, average_recalls = validate(val_loader, model, criterion, [pylogger],
+                                                  args, epoch, tflogger)
+                else:
+                    top1, top5, vloss, mAP = validate(val_loader, model, criterion, [pylogger],
                                                   args, epoch, tflogger)
                 distiller.log_activation_statistics(epoch, "valid", loggers=all_tbloggers,
                                                     collector=collectors["sparsity"])
@@ -554,8 +559,15 @@ def main():
                 stats = ('Performance/Validation/', OrderedDict([('Loss', vloss), ('mAP', mAP)]))
             else:
                 if not args.regression:
-                    stats = ('Performance/Validation/', OrderedDict([('Loss', vloss),
-                                                                     ('Top1', top1)]))
+                    if args.display_confusion:
+                        stats = ('Performance/Validation/', OrderedDict([('Loss', vloss),
+                                                                     ('Top1', top1),
+                                                                     ('F1-Score', f1),
+                                                                     ("average precisions", average_precisions),
+                                                                     ("average recalls", average_recalls)]))
+                    else:
+                        stats = ('Performance/Validation/', OrderedDict([('Loss', vloss),
+                                                                        ('Top1', top1)]))
                     if args.num_classes > 5:
                         stats[1]['Top5'] = top5
                 else:
@@ -907,7 +919,10 @@ def test(test_loader, model, criterion, loggers, activations_collectors, args):
     if activations_collectors is None:
         activations_collectors = create_activation_stats_collectors(model, None)
     with collectors_context(activations_collectors["test"]) as collectors:
-        top1, top5, vloss, mAP = _validate(test_loader, model, criterion, loggers, args)
+        if args.display_confusion:
+            top1, top5, vloss, mAP, f1, average_precisions, average_recalls = _validate(test_loader, model, criterion, loggers, args)
+        else:
+            top1, top5, vloss, mAP = _validate(test_loader, model, criterion, loggers, args)
         distiller.log_activation_statistics(-1, "test", loggers, collector=collectors['sparsity'])
 
         if args.kernel_stats:
@@ -1245,7 +1260,17 @@ def _validate(data_loader, model, criterion, loggers, args, epoch=-1, tflogger=N
             return classerr.value(), .0, losses['objective_loss'].mean, 0
 
         if args.display_confusion:
+            f1_score = calculate_f1_score(calculate_precision(confusion.value()), calculate_recall(confusion.value()))
+            precisions = calculate_precision(confusion.value())
+            recalls = calculate_recall(confusion.value())
+            average_precisions = sum(precisions) / len(precisions)
+            average_recalls = sum(recalls) / len(recalls)
             msglogger.info('==> Confusion:\n%s\n', str(confusion.value()))
+            msglogger.info("f1-score: %s", str(f1_score))
+            msglogger.info("all precisions: [%s]", ", ".join([str(l) for l in precisions]))
+            msglogger.info("all recalls: [%s]", ", ".join([str(l) for l in recalls]))
+            msglogger.info("average precision: %s", str(average_precisions))
+            msglogger.info("average recalls: %s", str(average_recalls))
             if args.save_confusion:
                 matrices_path = f"{msglogger.logdir}/confusion_matrices"
                 if not os.path.exists(matrices_path):
@@ -1256,10 +1281,16 @@ def _validate(data_loader, model, criterion, loggers, args, epoch=-1, tflogger=N
                 tflogger.tblogger.writer.add_image('Validation/ConfusionMatrix', cf, epoch,
                                                    dataformats='HWC')
         if not args.regression:
+            if args.display_confusion:
+                f1_score = calculate_f1_score(calculate_precision(confusion.value()), calculate_recall(confusion.value()))
+                return classerr.value(1), classerr.value(min(args.num_classes, 5)), \
+                    losses['objective_loss'].mean, 0, f1_score, average_precisions, average_recalls
             return classerr.value(1), classerr.value(min(args.num_classes, 5)), \
                 losses['objective_loss'].mean, 0
     # else:
     total_top1, total_top5, losses_exits_stats = earlyexit_validate_stats(args)
+    if args.display_confusion:
+        return total_top1, total_top5, losses_exits_stats[args.num_exits-1], 0, f1_score, average_precisions, average_recalls
     return total_top1, total_top5, losses_exits_stats[args.num_exits-1], 0
 
 

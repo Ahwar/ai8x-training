@@ -1,17 +1,14 @@
 # Report showing results of training experiments with Unknow class.
 This file will show you the model training graphs, `accuracy`, `precision`, `recall`, and `f1-score` tables. 
-First, I will show you stats about different approaches and experiment and then describe which Experiment I think is the best and why we chose that strategy.
 
 **Dataset and Unknow Class:**
-The dataset `KWS` we have is getting audios from two different sources and can create two datasets with the `twenty classes(KWS 20)` and `thirty-five classes KWS 35` datasets. We are using the `KWS 20` dataset with `20` classes of labels `[up, down, left, right, stop, go, yes, no, on, off, one, two, three, four, five, six, seven, eight, nine, zero],` and a class with `unknown` label. Any audio labeled not in the abovementioned labels will move to the `unknown` class.
+The dataset `KWS` we have is getting audios from two different sources and can create two datasets with the `twenty classes(KWS 20)` and `thirty-five classes KWS 35` datasets. We are using the `KWS 20` dataset with `20` classes of labels `[up, down, left, right, stop, go, yes, no, on, off, one, two, three, four, five, six, seven, eight, nine, zero],` and a class with `unknown` label. Any audio labeled not in the above mentioned labels will move to the `unknown` class.
 
 According to docs in the `datasets/kws20.py` file,  
 
 > The dataset originally includes `30 keywords`. A dataset is formed with 7 or 21 classes which includes 6 or 20 of the original keywords and the rest of the dataset is used to form the last class, i.e class of the `unknowns`. To further improve the detection of `unknown words`, the `librispeech` dataset is also downloaded and converted to 1 second segments to be used as unknowns as well.
 
-In summary, all the audios that are not labeled are moved to the unknown class, and I think that is why the unknown category is affecting the overall accuracy; if we ignore the unknown class while calculating accuracy in `experiment 1`, the accuracy is `98%`, and when with `unknown` it becomes `93%`.   
-
-Unknown class is giving different `accuracies` and affecting the overall `model accuracy.` So, I ran three experiments to change how much weight the unknown class should be given. as shown in the following code taken from the dataset builder code, and they gave weightage to the unknown class.
+In summary, all the audios that are not labeled are moved to the unknown class.
 
 ```python
 dataset = [
@@ -255,10 +252,143 @@ Our accuracy of classes with unknown classes is `55%`, and by ignoring the unkno
 
 ![Confusion Matrix](images/exp004_evaluation_confusion_matrix.png)
 
+## Experiment 4: 6 keyword classification
+We are now detecting six keywords and one unknown classes 
+
+Dataset Info
+```
+Processing train...
+Class up (# 31): 10080 elements
+Class down (# 5): 10518 elements
+Class left (# 15): 10239 elements
+Class right (# 23): 10197 elements
+Class stop (# 27): 10443 elements
+Class go (# 11): 10446 elements
+Class UNKNOWN: 278910 elements
+
+Processing test...
+Class up (# 31): 1089
+Class down (# 5): 1233
+Class left (# 15): 1164
+Class right (# 23): 1137
+Class stop (# 27): 1173
+Class go (# 11): 1194
+Class UNKNOWN: 31530
+Dataset sizes:
+        training=306750
+        validation=34083
+        test=38520
+```
+
+**Validation Top 1 Accuracy**
+![Validation Top 1 Accuracy](images/exp006_Performance_Validation_Top1.svg)
+
+**Validation Loss**
+![Validation Loss](images/exp006_Performance_Validation_Loss.svg)
+
+
+**Training Top 1 Accuracy**
+![Training Top 1 Accuracy](images/exp006_Performance_Training_Top1.svg)
+
+
+**Training Loss**
+![Training Loss](images/exp006_Performance_Training_Overall_Loss.svg)
+
+**Training Learning Rate**
+![Training Learning Rate](images/exp006_Performance_Training_LR.svg)  
+
+### Accuracy Table on Testing Dataset:  
+
+|classes|precisions_with_unknown|recall_with_unknown|f1 score with unknown|precisions_without_unknown|recall_without_unknown|f1 score without unknown|
+|-------|-----------------------|-------------------|---------------------|--------------------------|----------------------|------------------------|
+|up     |0.74311                |0.99082            |0.81067              |0.989                     |0.99815               |0.99203                 |
+|down   |0.84637                |0.98297            |0.88748              |0.99671                   |0.99263               |0.99535                 |
+|left   |0.83333                |0.98368            |0.87807              |0.9922                    |0.99479               |0.99306                 |
+|right  |0.86146                |0.97889            |0.89734              |0.99731                   |0.99375               |0.99612                 |
+|stop   |0.91176                |0.97783            |0.93277              |0.99826                   |0.98709               |0.99451                 |
+|go     |0.79001                |0.9799             |0.84456              |0.98901                   |0.99659               |0.99153                 |
+|UNKNOWN|0.99732                |0.95623            |0.98324              |                          |                      |                        |
+|    **Mean**   |0.85477                |0.97862            |0.89059              |0.99375                   |0.99383               |0.99377                 |
+|overall accuracy with unknown|0.960955|
+|overall accuracy ignoring unknown| 0.993776233 |
+
+
+
+
+
+In the above table, the last row tells the Mean of columns.
+Our accuracy of classes with unknown classes is `96%`, and by ignoring the unknown class is `99%`.
+
+
+## Test Dataset Confusion Matrix:  
+
+
+![Confusion Matrix](images/exp006_evaluation_confusion_matrix.png)
+
+
+
+## Experiment 5: 1 keyword classification
+We are now detecting 1 keyword and one unknown 
+
+Dataset Info
+```
+Processing train...
+Class up (# 31): 10080 elements
+Class UNKNOWN: 330753 elements
+
+Processing test...
+Class up (# 31): 1089 elements
+Class UNKNOWN: 37431 elements
+Dataset sizes:
+        training=306750
+        validation=34083
+        test=38520
+```
+
+**Validation Top 1 Accuracy**
+![Validation Top 1 Accuracy](images/exp007_Performance_Validation_Top1.svg)
+
+**Validation Loss**
+![Validation Loss](images/exp007_Performance_Validation_Loss.svg)
+
+
+**Training Top 1 Accuracy**
+![Training Top 1 Accuracy](images/exp007_Performance_Training_Top1.svg)
+
+
+**Training Loss**
+![Training Loss](images/exp007_Performance_Training_Overall_Loss.svg)
+
+**Training Learning Rate**
+![Training Learning Rate](images/exp007_Performance_Training_LR.svg)  
+
+### Accuracy Table on Testing Dataset:  
+
+|classes|precisions_with_unknown|recall_with_unknown|f1 score with unknown|precisions_without_unknown|recall_without_unknown|f1 score without unknown|
+|-------|-----------------------|-------------------|---------------------|--------------------------|----------------------|------------------------|
+|up     |0.71507                |0.83196            |0.75021              |1.0                       |1.0                   |1.0                     |
+|UNKNOWN|0.99509                |0.99036            |0.99351              |                          |                      |                        |
+|       |0.85508                |0.91116            |0.87186              |1.0                       |1.0                   |1.0                     |
+|overall accuracy with unknown|0.985877|
+|overall accuracy ignoring unknown| 1.00 |
+
+
+
+
+
+In the above table, the last row tells the Mean of columns.
+Our accuracy of classes with unknown classes is `98%`, and by ignoring the unknown class is `100%`. 
+
+
+## Test Dataset Confusion Matrix:  
+
+```
+==> Confusion:
+[[  906   183]
+ [  361 37070]]
+```
 
 ## Comparing All
-In this, I have compared prominent graphs for each Experiment.  
-The real question was why the accuracies differ with or by ignoring the unknown class. The reason is that all the audio that are not related to our labels are moved to the Unknown class because the `unknown` class is a mix-up of all other audios which does not belong to any class label that is why it is affecting the overall accuracy. If we compare all the graphs with each other, we can see that the unknown class does not have any effect on the training or validation loss. The accuracy is seen differently because it takes an unknown class into account. If we ignore the unknown class in the first Experiment that our model has around `98%` Accuracy, but if we do consider it in the accuracy, then our accuracy will be `97%`
 
 <span style="display: inline">
 <span>
@@ -266,65 +396,45 @@ legends for below graphs<br>
 <div style="display: flex;flex-direction: row;flex-wrap: nowrap;align-content: center;justify-content: flex-start;align-items: flex-end;">
         <div>
             <br>
-            🔵
+            <svg height="20" width="20" stroke-width="0px;">
+                <circle cx="10" cy="10" r="8" stroke="rgb(88, 197, 237)" stroke-width="3" fill="rgb(88, 197, 237)" outline="0px"></circle>
+                Sorry, your browser does not support inline SVG.
+            </svg>
             <svg height="20" width="20" stroke-width="0px;">
                 <circle cx="10" cy="10" r="8" stroke="#f15a91" stroke-width="3" fill="#f15a91" outline="0px"></circle>
                 Sorry, your browser does not support inline SVG.
             </svg>
-            <p style="color: #f15a91;">Experiment 1</p>
+            <p style="color: rgb(88, 197, 237)">Experiment 1 20 classes</p>
         </div>
         <div>
             <svg height="20" width="20" stroke-width="0px;">
-                <circle cx="10" cy="10" r="8" stroke="#ff8b67" stroke-width="3" fill="#ff8b67" outline="0px"></circle>
+                <circle cx="10" cy="10" r="8" stroke="rgb(0, 119, 187)" stroke-width="3" fill="rgb(0, 119, 187)" outline="0px"></circle>
                 Sorry, your browser does not support inline SVG.
             </svg>
-            <p style="color: #ff8b67; position: relative;">Experiment 2</p>
+            <p style="color: rgb(0, 119, 187); position: relative;">Experiment 5 six classes</p>
         </div>
             <div>
                 <svg style="position: relative;" height="20" width="20" stroke-width="0px;">
-                    <circle cx="10" cy="10" r="8" stroke="red" stroke-width="3" fill="red" outline="0px"></circle>
+                    <circle cx="10" cy="10" r="8" stroke="red" stroke-width="3" fill="rgb(204, 51, 17)" outline="0px"></circle>
                     Sorry, your browser does not support inline SVG.
                 </svg>
-                <p style="color: red;">Experiment 3</p>
+                <p style="color: rgb(204, 51, 17)">Experiment 5 binary</p>
             </div>
             </div>
 
 **Validation Top 1 Accuracy**
-![Validation Top 1 Accuracy](images/firstfile_Performance_Validation_Top1.svg)
+![Validation Top 1 Accuracy](images/comp4_Performance_Validation_Top1.svg)
 
 
 **Validation Loss**
-![Validation Loss](images/firstfile_Performance_Validation_Loss.svg)
+![Validation Loss](images/comp4_Performance_Validation_Loss.svg)
 
 
 **Training Loss**
-![Training Loss](images/firstfile_Performance_Training_Overall_Loss.svg)
+![Training Loss](images/comp4_Performance_Training_Overall_Loss.svg)
 
 I also ran other experiments by changing different parameter, like batch, learning rate, and other parameters, but they had no serious effect on the accuracy of the model so I am not showing those graphs in this document.
 
 ## Conclusion  
-The best experiment so far is experiment number 1, Our accuracy of classes with unknown classes is `93%`, and by ignoring the `unknown` class is `98%`.
-
-The question is why are we calculating accuracies with and without unknown classes? 
-
-As described in the first paragraph, the unknown labels include audios that are not labeled, so they are affecting the accuracy. 
-
-
-
-As we can see from the above comparison paragraphs, although the validation accuracies are different with all experiments, the loss is almost the same. So that for predicting the full accuracies, we can ignore the result and accuracy of the unknown class. In that case, the three experiment yield `98%`, `94%`, and `91%` accuracies by ignoring unknown classes.
-
+The best experiment so far is experiment number 1, Our accuracy of classes with unknown classes is `93%`, and by ignoring the `unknown` class is `98%`.  
 So for the final model, we can use the model of the first Experiment with `98%` accuracy ignoring the unknown, and `93%` accuracy with the unknown class 
-
-You can also see in the confusion matrix from experiment 1 that most of the false predictions are happening in unknown classes. 
-
-By comparing these experiments I am trying to show that the overall accuracy is lower due to an unknown class 
-
-
-
-**Strategies**
-
-To avoid this issue in lower accuracy due to unknown class we can either assess our model accuracy by considering the accuracy which we get by ignoring the unlimited class or we can remove the unknown class label, and data from the dataset to train the model without unknown (it can require great effort and time). I think that the accuracy is 93% because of garbage values in the unknown class,  
-
-
-
-we can ignore the lower accuracy due to the unknown class, Because we are going to use transfer learning in our final model the issue due to the unknown class can be ignored.
