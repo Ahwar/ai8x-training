@@ -724,13 +724,19 @@ def KWS_35_get_unquantized_datasets(data, load_train=True, load_test=True):
     """
     return KWS_get_unquantized_datasets(data, load_train, load_test, num_classes=35)
 
+def read_unknown_value():
+    file_path = 'unknown.txt'  # Specify the file path
+    with open(file_path, 'r') as file:
+        # Read the contents of the file
+        file_contents = file.read()
+    return float(file_contents)
 
 datasets = [
     {
         'name': 'KWS',  # 6 keywords
         'input': (128, 128),
         'output': ('up', 'down', 'left', 'right', 'stop', 'go', 'UNKNOWN'),
-        'weight': (1, 1, 1, 1, 1, 1, 0.06),
+        'weight': (1, 1, 1, 1, 1, 1, read_unknown_value()),
         'loader': KWS_get_datasets,
     },
     {

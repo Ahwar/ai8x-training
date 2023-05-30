@@ -132,6 +132,14 @@ weight_sum = None
 weight_stddev = None
 weight_mean = None
 
+def read_unknown_value():
+    """read the weightage given to unknown class from file unknown.txt"""
+    file_path = 'unknown.txt'  # Specify the file path
+    with open(file_path, 'r') as file:
+        # Read the contents of the file
+        file_contents = file.read()
+    return float(file_contents)
+
 
 def main():
     """main"""
@@ -1032,7 +1040,7 @@ def _validate(data_loader, model, criterion, loggers, args, epoch=-1, tflogger=N
         confusion = tnt.ConfusionMeter(args.num_classes)
     total_steps = (total_samples + batch_size - 1) // batch_size
     msglogger.info('%d samples (%d per mini-batch)', total_samples, batch_size)
-
+    msglogger.info("weightage given to the unknown class: %s", read_unknown_value())
     # Switch to evaluation mode
     model.eval()
 
