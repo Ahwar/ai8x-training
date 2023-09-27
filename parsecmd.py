@@ -117,6 +117,15 @@ def get_parser(model_names, dataset_names):
                                            default='', type=str, metavar='PATH',
                                            help='path to checkpoint to load weights from '
                                                 '(excluding other fields) (experimental)')
+    load_checkpoint_group_exc.add_argument('--transfer-learning-from', dest='transferlearning_model_path',
+                                           default='', type=str, metavar='PATH',
+                                           help='path to pretrain checkpoint. Use to start transfer '
+                                                'transfer learning training session.')
+    parser.add_argument('--model-output-shape', dest='model_output_shape',
+                                           default=None,
+                                           help='number of output layers of the model you are using '
+                                                'for transfer learning.')
+    
     load_checkpoint_group.add_argument('--pretrained', dest='pretrained', action='store_true',
                                        help='use pre-trained model')
     load_checkpoint_group.add_argument('--reset-optimizer', action='store_true',

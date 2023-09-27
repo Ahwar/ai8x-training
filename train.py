@@ -335,7 +335,10 @@ def main():
     # Get object detection params
     obj_detection_params = parse_obj_detection_yaml.parse(args.obj_detection_params) \
         if args.obj_detection_params else None
-
+    def change_out_features(model, no_of_outputs):
+        num_ftrs = model.fc.op.in_features
+        model.fc = ai8x.Linear(num_ftrs, no_of_outputs, bias=args.use_bias, wide=True)
+        return model
     # We can optionally resume from a checkpoint
     optimizer = None
     if args.resumed_checkpoint_path:
@@ -361,6 +364,23 @@ def main():
             # pylint: enable=unsubscriptable-object
         model = apputils.load_lean_checkpoint(model, args.load_model_path,
                                               model_device=args.device)
+        ai8x.update_model(model)
+    elif args.transferlearning_model_path:
+        if args.model_output_shape == None:
+            raise Exception("Please add parameter")
+        _ = model.fc.op.out_features
+        model = change_out_features(model, int(args.model_output_shape))
+        update_old_model_params(args.transferlearning_model_path, model)
+        if qat_policy is not None:
+            checkpoint = torch.load(args.transferlearning_model_path,
+                                    map_location=lambda storage, loc: storage)
+            # pylint: disable=unsubscriptable-object
+            if checkpoint.get('epoch', None) >= qat_policy['start_epoch']:
+                ai8x.fuse_bn_layers(model)
+            # pylint: enable=unsubscriptable-object
+        model = apputils.load_lean_checkpoint(model, args.transferlearning_model_path,
+                                              model_device=args.device)
+        model = change_out_features(model, _)
         ai8x.update_model(model)
 
     if not args.load_serialized and args.gpus != -1 and torch.cuda.device_count() > 1:
@@ -604,7 +624,7 @@ def main():
 
             apputils.save_checkpoint(epoch, args.cnn, model, optimizer=optimizer,
                                      scheduler=compression_scheduler, extras=checkpoint_extras,
-                                     is_best=is_best, name="epoch__{}_{}".format(epoch, checkpoint_name),
+                                     is_best=is_best, name=checkpoint_name,
                                      dir=msglogger.logdir)
 
         if compression_scheduler:
@@ -1772,3 +1792,5 @@ if __name__ == '__main__':
         if msglogger is not None:
             msglogger.info('')
             msglogger.info('Log file for this run: %s', os.path.realpath(msglogger.log_filename))
+            print("====="*3, "pausing execution for 5 seconds to cool down the GPU", "====="*3)
+            time.sleep(20)

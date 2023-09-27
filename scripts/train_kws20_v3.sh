@@ -1,6 +1,6 @@
-unknown_weight=0.82  # weight for the first experiement
+unknown_weight=0.86  # weight for the first experiement
 echo $unknown_weight > "unknown.txt"  # save unknownweight to the unknown.txt file
-epochs=5 # number of epochs
+epochs=1 # number of epochs
 
 # how much the weightage should be increased after every experiment
 increment=0.02
@@ -10,7 +10,7 @@ for ((i=45; i<=45; i++)); do
     
     exp=$i
     # expriment name
-    exp_name="resume_exp0010-${exp}_0${unknown_weight}unknown_kws20_v3_${epochs}e_adamo_0-0001lr_256b_nobias_6classes_KWSdataset"
+    exp_name="train_exp0014-${exp}_transferlearning6_0${unknown_weight}unknown_kws20_v3_kardome_${epochs}e_adamo_0-0001lr_256b_nobias_1classes_KWSkardomedataset-noothers"
     exp_name=${exp_name//./-} # replace . with -
 
     echo "=========== new experiement ${exp}================="
@@ -23,7 +23,8 @@ for ((i=45; i<=45; i++)); do
         --qat-policy None --compress policies/schedule_kws20.yaml --model ai85kws20netv3 --dataset KWS\
         --show-train-accuracy "full" --enable-tensorboard \
         --confusion --save-confusion --param-hist --pr-curves --embedding --print-freq 100 \
-        -j 4 --device MAX78000 "$@"
+        --transfer-learning-from "logs/train_exp0011-45_00-82unknown_kws20_v3_220e_adamo_0-0001lr_256b_nobias_6classes_KWSdataset___2023.06.07-175352/epoch__181_train_exp0011-45_00-82unknown_kws20_v3_220e_adamo_0-0001lr_256b_nobias_6classes_KWSdataset_best.pth.tar" \
+        -j 5 --device MAX78000 --model-output-shape 7 "$@"
     #!/bin/bash
 
     # increment unknown weightage
@@ -31,3 +32,4 @@ for ((i=45; i<=45; i++)); do
     echo $unknown_weight > unknown.txt
 
 done
+# systemctl suspend
