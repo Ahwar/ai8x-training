@@ -70,13 +70,7 @@ class KWS:
     url_librispeech = 'http://us.openslr.org/resources/12/dev-clean.tar.gz'
     fs = 16000
 
-    class_dict = {'backward': 0, 'bed': 1, 'bird': 2, 'cat': 3, 'dog': 4, 'down': 5,
-                  'eight': 6, 'five': 7, 'follow': 8, 'forward': 9, 'four': 10, 'go': 11,
-                  'happy': 12, 'house': 13, 'learn': 14, 'left': 15, 'librispeech': 16,
-                  'marvin': 17, 'nine': 18, 'no': 19, 'off': 20, 'on': 21, 'one': 22,
-                  'right': 23, 'seven': 24, 'sheila': 25, 'six': 26, 'stop': 27,
-                  'three': 28, 'tree': 29, 'two': 30, 'up': 31, 'visual': 32, 'wow': 33,
-                  'yes': 34, 'zero': 35}
+    class_dict = {'hello_siri': 0, "other": 1}
 
     def __init__(self, root, classes, d_type, t_type, transform=None, quantization_scheme=None,
                  augmentation=None, download=False, save_unquantized=False):
@@ -495,8 +489,8 @@ class KWS:
 
             # PARAMETERS
             overlap = int(np.ceil(row_len * overlap_ratio))
-            num_rows = int(np.ceil(exp_len / (row_len - overlap)))
-            data_len = int((num_rows * row_len - (num_rows - 1) * overlap))
+            num_rows = int(np.ceil(exp_len / (row_len - overlap))) # number of rows in final image
+            data_len = int((num_rows * row_len - (num_rows - 1) * overlap)) # size of final image (number of pixels)
             print(f'data_len: {data_len}')
 
             # show the size of dataset for each keyword
@@ -598,6 +592,9 @@ class KWS_20(KWS):
     def __str__(self):
         return self.__class__.__name__
 
+def KWS_binary_get_datasets(data, load_train=True, load_test=True):
+    
+    return KWS_get_datasets(data, load_train, load_test, num_classes=1)
 
 def KWS_get_datasets(data, load_train=True, load_test=True, num_classes=6):
     """
@@ -623,7 +620,7 @@ def KWS_get_datasets(data, load_train=True, load_test=True, num_classes=6):
         ai8x.normalize(args=args)
     ])
 
-    if num_classes in (6, 20):
+    if num_classes in (1, 6, 20):
         classes = next((e for _, e in enumerate(datasets)
                         if len(e['output']) - 1 == num_classes))['output'][:-1]
     else:
@@ -733,7 +730,15 @@ def read_unknown_value():
 
 datasets = [
     {
-        'name': 'KWS',  # 6 keywords
+        'name': 'KWS',  # 2 keywords
+        'input': (128, 128),
+        'output': ('hello_siri','UNKNOWN'),
+        'weight': (1, read_unknown_value()),
+        'loader': KWS_binary_get_datasets,
+    },
+
+     {
+        'name': 'KWS_6',  # 6 keywords
         'input': (128, 128),
         'output': ('up', 'down', 'left', 'right', 'stop', 'go', 'UNKNOWN'),
         'weight': (1, 1, 1, 1, 1, 1, read_unknown_value()),
