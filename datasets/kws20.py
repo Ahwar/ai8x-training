@@ -169,6 +169,10 @@ class KWS:
                     print('No key `echo_decay` in input augmentation dictionary! '
                           'Using defaults: [Min: 0.3, Max: 0.7]')
                     self.augmentation['echo_decay'] = {'min': 0.3, 'max': 0.7}
+                if 'pitch_shift' not in augmentation:
+                    print('No key `pitch_shift` in input augmentation dictionary! '
+                          'Using defaults: [Min: -2, Max: 2]')
+                    self.augmentation['pitch_shift'] = {'min': -2, 'max': 2}
 
     def __download(self):
 
@@ -456,10 +460,24 @@ class KWS:
         # Add the original audio signal to the echo signal and return the result
         # This combines the original signal with the echo
         return audio + echo_audio
+    
+    @staticmethod
+    def pitch_shift(audio, fs, shift_steps):
+        """Shifts the pitch of the audio signal by the specified number of steps.
+
+        Args:
+            audio (ndarray): Input audio signal.
+            fs (int): Sampling frequency of the audio.
+            shift_steps (float): Number of steps to shift the pitch. Positive values increase the pitch, negative values decrease the pitch.
+
+        Returns:
+            ndarray: Audio signal with pitch shifted.
+        """
+        return librosa.effects.pitch_shift(audio, sr=fs, n_steps=shift_steps)
 
     def augment(self, audio, fs, verbose=False):
         """
-        Augments the input audio signal by adding random noise, shifting, stretching, and echo effects.
+        Augments the input audio signal by adding random noise, shifting, stretching, echo, and pitch shifting effects.
 
         Parameters:
         audio (ndarray): The input audio signal.
@@ -483,16 +501,20 @@ class KWS:
                                               self.augmentation['echo_delay']['max'])
         random_echo_decay = np.random.uniform(self.augmentation['echo_decay']['min'],
                                               self.augmentation['echo_decay']['max'])
+        random_pitch_shift = np.random.uniform(self.augmentation['pitch_shift']['min'],
+                                               self.augmentation['pitch_shift']['max'])
 
         aug_audio = tsm.wsola(audio, random_strech_coeff)
         aug_audio = self.shift(aug_audio, random_shift_time, fs)
         aug_audio = self.add_white_noise(aug_audio, random_noise_var_coeff)
         aug_audio = self.add_echo(aug_audio, fs, random_echo_delay, random_echo_decay)
+        aug_audio = self.pitch_shift(aug_audio, fs, random_pitch_shift)
 
         if verbose:
             print(f'random_noise_var_coeff: {random_noise_var_coeff:.2f}\nrandom_shift_time: \
                 {random_shift_time:.2f}\nrandom_strech_coeff: {random_strech_coeff:.2f}\nrandom_echo_delay: \
-                {random_echo_delay:.2f}\nrandom_echo_decay: {random_echo_decay:.2f}')
+                {random_echo_delay:.2f}\nrandom_echo_decay: {random_echo_decay:.2f}\nrandom_pitch_shift: \
+                {random_pitch_shift:.2f}')
         return aug_audio
 
     def augment_multiple(self, audio, fs, n_augment, verbose=False):
