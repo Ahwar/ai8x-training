@@ -161,6 +161,14 @@ class KWS:
                     print('No key `strech` in input augmentation dictionary! '
                           'Using defaults: [Min: 0.8, Max: 1.3]')
                     self.augmentation['strech'] = {'min': 0.8, 'max': 1.3}
+                if 'echo_delay' not in augmentation:
+                    print('No key `echo_delay` in input augmentation dictionary! '
+                          'Using defaults: [Min: 0.05, Max: 0.2]')
+                    self.augmentation['echo_delay'] = {'min': 0.05, 'max': 0.2}
+                if 'echo_decay' not in augmentation:
+                    print('No key `echo_decay` in input augmentation dictionary! '
+                          'Using defaults: [Min: 0.3, Max: 0.7]')
+                    self.augmentation['echo_decay'] = {'min': 0.3, 'max': 0.7}
 
     def __download(self):
 
@@ -419,23 +427,72 @@ class KWS:
 
         return audio2
 
-    def augment(self, audio, fs, verbose=False):
-        """Augments audio by adding random noise, shift and stretch ratio.
+    @staticmethod
+    def add_echo(audio, fs, delay, decay):
+        """Adds echo effect to audio with specified delay and decay.
+
+        Args:
+            audio (ndarray): Input audio signal.
+            fs (int): Sampling frequency of the audio.
+            delay (float): Delay time in seconds.
+            decay (float): Decay factor for the echo effect.
+
+        Returns:
+            ndarray: Audio signal with echo effect added.
         """
+        # Calculate the number of samples that correspond to the delay time
+        delay_samples = int(delay * fs)
+
+        # Set the decay factor for the echo
+        decay_factor = decay
+
+        # Create a new array of zeros with the same shape as the audio signal
+        echo_audio = np.zeros_like(audio)
+
+        # Add a scaled, delayed version of the audio signal to the echo_audio array
+        # This creates the echo effect
+        echo_audio[delay_samples:] = audio[:-delay_samples] * decay_factor
+
+        # Add the original audio signal to the echo signal and return the result
+        # This combines the original signal with the echo
+        return audio + echo_audio
+
+    def augment(self, audio, fs, verbose=False):
+        """
+        Augments the input audio signal by adding random noise, shifting, stretching, and echo effects.
+
+        Parameters:
+        audio (ndarray): The input audio signal.
+        fs (int): The sampling rate of the audio signal.
+        verbose (bool, optional): If True, print the values of the random augmentation parameters. Defaults to False.
+
+        Returns:
+        ndarray: The augmented audio signal.
+
+        Raises:
+        ValueError: If the input audio signal is empty or the sampling rate is not positive.
+        """
+
         random_noise_var_coeff = np.random.uniform(self.augmentation['noise_var']['min'],
                                                    self.augmentation['noise_var']['max'])
         random_shift_time = np.random.uniform(self.augmentation['shift']['min'],
                                               self.augmentation['shift']['max'])
         random_strech_coeff = np.random.uniform(self.augmentation['strech']['min'],
                                                 self.augmentation['strech']['max'])
+        random_echo_delay = np.random.uniform(self.augmentation['echo_delay']['min'],
+                                              self.augmentation['echo_delay']['max'])
+        random_echo_decay = np.random.uniform(self.augmentation['echo_decay']['min'],
+                                              self.augmentation['echo_decay']['max'])
 
         aug_audio = tsm.wsola(audio, random_strech_coeff)
         aug_audio = self.shift(aug_audio, random_shift_time, fs)
         aug_audio = self.add_white_noise(aug_audio, random_noise_var_coeff)
+        aug_audio = self.add_echo(aug_audio, fs, random_echo_delay, random_echo_decay)
 
         if verbose:
             print(f'random_noise_var_coeff: {random_noise_var_coeff:.2f}\nrandom_shift_time: \
-                    {random_shift_time:.2f}\nrandom_strech_coeff: {random_strech_coeff:.2f}')
+                {random_shift_time:.2f}\nrandom_strech_coeff: {random_strech_coeff:.2f}\nrandom_echo_delay: \
+                {random_echo_delay:.2f}\nrandom_echo_decay: {random_echo_decay:.2f}')
         return aug_audio
 
     def augment_multiple(self, audio, fs, n_augment, verbose=False):
