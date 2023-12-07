@@ -521,7 +521,34 @@ class KWS:
         """Calls `augment` function for n_augment times for given audio data.
         Finally the original audio is added to have (n_augment+1) audio data.
         """
-        aug_audio = [self.augment(audio, fs, verbose=verbose) for i in range(n_augment)]
+        
+        # apply all augmentations at once
+        aug_audio = [self.augment(audio, fs, verbose=verbose)]
+        # generate random augmentation parameters
+        random_noise_var_coeff = np.random.uniform(self.augmentation['noise_var']['min'],
+                                                   self.augmentation['noise_var']['max'])
+        random_shift_time = np.random.uniform(self.augmentation['shift']['min'],
+                                              self.augmentation['shift']['max'])
+        random_strech_coeff = np.random.uniform(self.augmentation['strech']['min'],
+                                                self.augmentation['strech']['max'])
+        random_echo_delay = np.random.uniform(self.augmentation['echo_delay']['min'],
+                                              self.augmentation['echo_delay']['max'])
+        random_echo_decay = np.random.uniform(self.augmentation['echo_decay']['min'],
+                                              self.augmentation['echo_decay']['max'])
+        random_pitch_shift = np.random.uniform(self.augmentation['pitch_shift']['min'],
+                                               self.augmentation['pitch_shift']['max'])
+        # add only stretched audio augmentation
+        aug_audio.insert(0, tsm.wsola(audio, random_strech_coeff))
+        # add shifted audio augmentation
+        aug_audio.insert(0, self.shift(audio, random_shift_time, fs))
+        # add audio with white noise augmentation
+        aug_audio.insert(0, self.add_white_noise(audio, random_noise_var_coeff))
+        # add audio with echo augmentation
+        aug_audio.insert(0, self.add_echo(audio, fs, random_echo_delay, random_echo_decay))
+        # add audio with pitch shift augmentation
+        aug_audio.insert(0, self.pitch_shift(audio, fs, random_pitch_shift))
+
+        # add original audio
         aug_audio.insert(0, audio)
         return aug_audio
 
@@ -705,7 +732,7 @@ def KWS_get_datasets(data, load_train=True, load_test=True, num_classes=6):
     else:
         raise ValueError(f'Unsupported num_classes {num_classes}')
 
-    augmentation = {'aug_num': 2, 'shift': {'min': -0.15, 'max': 0.15},
+    augmentation = {'aug_num': 6, 'shift': {'min': -0.15, 'max': 0.15},
                     'noise_var': {'min': 0, 'max': 1.0}}
     quantization_scheme = {'compand': False, 'mu': 10}
 
