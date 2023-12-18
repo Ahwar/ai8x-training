@@ -173,6 +173,14 @@ class KWS:
                     print('No key `pitch_shift` in input augmentation dictionary! '
                           'Using defaults: [Min: -2, Max: 2]')
                     self.augmentation['pitch_shift'] = {'min': -2, 'max': 2}
+                if 'reverberation_room_size' not in augmentation:
+                    print('No key `reverberation_room_size` in input augmentation dictionary! '
+                          'Using defaults: [Min: 0.3, Max: 0.7]')
+                    self.augmentation['reverberation_room_size'] = {'min': 0.3, 'max': 0.7}
+                if 'reverberation_time' not in augmentation:
+                    print('No key `reverberation_time` in input augmentation dictionary! '
+                          'Using defaults: [Min: 0.1, Max: 0.7]')
+                    self.augmentation['reverberation_time'] = {'min': 0.1, 'max': 0.7}
 
     def __download(self):
 
@@ -474,10 +482,42 @@ class KWS:
             ndarray: Audio signal with pitch shifted.
         """
         return librosa.effects.pitch_shift(audio, sr=fs, n_steps=shift_steps)
+    
+    
+    def apply_reverberation(self, audio, fs, room_size, reverberation_time):
+        """Applies reverberation effect to audio with specified room size and reverberation time.
+
+        Args:
+            audio (ndarray): Input audio signal.
+            fs (int): Sampling frequency of the audio.
+            room_size (float): Room size parameter for the reverberation effect.
+            reverberation_time (float): Reverberation time parameter for the reverberation effect.
+
+        Returns:
+            ndarray: Audio signal with reverberation effect added.
+        """
+        # Calculate the number of samples that correspond to the reverberation time
+        reverberation_samples = int(reverberation_time * fs)
+
+        # Generate the impulse response for the reverberation effect
+        impulse_response = np.random.randn(reverberation_samples)
+
+        # Apply the impulse response to the audio signal using convolution
+        reverberated_audio = np.convolve(audio, impulse_response, mode="same")
+
+        # Scale the reverberated audio to avoid clipping
+        max_value = np.max(np.abs(reverberated_audio))
+        if max_value > 1.0:
+            reverberated_audio /= max_value
+
+        # Adjust the room size parameter to control the amount of reverberation
+        reverberated_audio *= room_size
+
+        return reverberated_audio
 
     def augment(self, audio, fs, verbose=False):
         """
-        Augments the input audio signal by adding random noise, shifting, stretching, echo, and pitch shifting effects.
+        Augments the input audio signal by adding random noise, shifting, stretching, echo, pitch shifting, and reverberation effects.
 
         Parameters:
         audio (ndarray): The input audio signal.
@@ -503,18 +543,23 @@ class KWS:
                                               self.augmentation['echo_decay']['max'])
         random_pitch_shift = np.random.uniform(self.augmentation['pitch_shift']['min'],
                                                self.augmentation['pitch_shift']['max'])
+        random_reverberation_room_size = np.random.uniform(self.augmentation['reverberation_room_size']['min'],
+                                                           self.augmentation['reverberation_room_size']['max'])
+        random_reverberation_time = np.random.uniform(self.augmentation['reverberation_time']['min'],
+                                                      self.augmentation['reverberation_time']['max'])
 
         aug_audio = tsm.wsola(audio, random_strech_coeff)
         aug_audio = self.shift(aug_audio, random_shift_time, fs)
         aug_audio = self.add_white_noise(aug_audio, random_noise_var_coeff)
         aug_audio = self.add_echo(aug_audio, fs, random_echo_delay, random_echo_decay)
         aug_audio = self.pitch_shift(aug_audio, fs, random_pitch_shift)
+        aug_audio = self.apply_reverberation(aug_audio, fs, random_reverberation_room_size, random_reverberation_time)
 
         if verbose:
             print(f'random_noise_var_coeff: {random_noise_var_coeff:.2f}\nrandom_shift_time: \
                 {random_shift_time:.2f}\nrandom_strech_coeff: {random_strech_coeff:.2f}\nrandom_echo_delay: \
                 {random_echo_delay:.2f}\nrandom_echo_decay: {random_echo_decay:.2f}\nrandom_pitch_shift: \
-                {random_pitch_shift:.2f}')
+                {random_pitch_shift:.2f}\nrandom_reverberation_room_size: {random_reverberation_room_size:.2f}\nrandom_reverberation_time: {random_reverberation_time:.2f}')
         return aug_audio
 
     def augment_multiple(self, audio, fs, n_augment, verbose=False):
@@ -537,6 +582,10 @@ class KWS:
                                               self.augmentation['echo_decay']['max'])
         random_pitch_shift = np.random.uniform(self.augmentation['pitch_shift']['min'],
                                                self.augmentation['pitch_shift']['max'])
+        random_reverberation_room_size = np.random.uniform(self.augmentation['reverberation_room_size']['min'],
+                                                           self.augmentation['reverberation_room_size']['max'])
+        random_reverberation_time = np.random.uniform(self.augmentation['reverberation_time']['min'],
+                                                      self.augmentation['reverberation_time']['max'])
         # add only stretched audio augmentation
         aug_audio.insert(0, tsm.wsola(audio, random_strech_coeff))
         # add shifted audio augmentation
@@ -547,6 +596,8 @@ class KWS:
         aug_audio.insert(0, self.add_echo(audio, fs, random_echo_delay, random_echo_decay))
         # add audio with pitch shift augmentation
         aug_audio.insert(0, self.pitch_shift(audio, fs, random_pitch_shift))
+        # add audio with reverberation augmentation
+        aug_audio.insert(0, self.apply_reverberation(audio, fs, random_reverberation_room_size, random_reverberation_time))
 
         # add original audio
         aug_audio.insert(0, audio)
@@ -732,7 +783,7 @@ def KWS_get_datasets(data, load_train=True, load_test=True, num_classes=6):
     else:
         raise ValueError(f'Unsupported num_classes {num_classes}')
 
-    augmentation = {'aug_num': 6, 'shift': {'min': -0.15, 'max': 0.15},
+    augmentation = {'aug_num': 7, 'shift': {'min': -0.15, 'max': 0.15},
                     'noise_var': {'min': 0, 'max': 1.0}}
     quantization_scheme = {'compand': False, 'mu': 10}
 
