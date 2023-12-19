@@ -45,6 +45,23 @@ import soundfile as sf
 import ai8x
 
 
+def random_with_exclude(low, high, exclude):
+    """
+    Generate a random number between `low` and `high`, excluding the `exclude` value.
+
+    Parameters:
+    low (float): The lower bound of the random number range.
+    high (float): The upper bound of the random number range.
+    exclude (float): The value to be excluded from the generated random number.
+
+    Returns:
+    float: A random number between `low` and `high`, excluding `exclude`.
+    """
+    while True:
+        num = np.random.uniform(low, high)
+        if num != exclude:
+            return num
+
 class KWS:
     """
     `SpeechCom v0.02 <http://download.tensorflow.org/data/speech_commands_v0.02.tar.gz>`
@@ -153,15 +170,15 @@ class KWS:
                     print('No key `noise_var` in input augmentation dictionary! ',
                           'Using defaults: [Min: 0., Max: 1.]')
                     self.augmentation['noise_var'] = {'min': 0., 'max': 1.}
-                if 'shift' not in augmentation:
+                if 'shift' not in augmentation: # image is left or right so it is better it is not  0
                     print('No key `shift` in input augmentation dictionary! '
                           'Using defaults: [Min:-0.1, Max: 0.1]')
                     self.augmentation['shift'] = {'min': -0.1, 'max': 0.1}
-                if 'strech' not in augmentation:
+                if 'strech' not in augmentation: # shrinks or stretches, is better it is not  1
                     print('No key `strech` in input augmentation dictionary! '
                           'Using defaults: [Min: 0.8, Max: 1.3]')
                     self.augmentation['strech'] = {'min': 0.8, 'max': 1.3}
-                if 'echo_delay' not in augmentation:
+                if 'echo_delay' not in augmentation:  
                     print('No key `echo_delay` in input augmentation dictionary! '
                           'Using defaults: [Min: 0.05, Max: 0.2]')
                     self.augmentation['echo_delay'] = {'min': 0.05, 'max': 0.2}
@@ -169,9 +186,9 @@ class KWS:
                     print('No key `echo_decay` in input augmentation dictionary! '
                           'Using defaults: [Min: 0.3, Max: 0.7]')
                     self.augmentation['echo_decay'] = {'min': 0.3, 'max': 0.7}
-                if 'pitch_shift' not in augmentation:
+                if 'pitch_shift' not in augmentation: # increase and decrease , is better it is not  zero
                     print('No key `pitch_shift` in input augmentation dictionary! '
-                          'Using defaults: [Min: -2, Max: 2]')
+                          'Using defaults: [Min: -2, Max: 2]') 
                     self.augmentation['pitch_shift'] = {'min': -2, 'max': 2}
                 if 'reverberation_room_size' not in augmentation:
                     print('No key `reverberation_room_size` in input augmentation dictionary! '
@@ -477,6 +494,8 @@ class KWS:
             audio (ndarray): Input audio signal.
             fs (int): Sampling frequency of the audio.
             shift_steps (float): Number of steps to shift the pitch. Positive values increase the pitch, negative values decrease the pitch.
+            shift_steps is a parameter that determines the number of semitones by which the pitch of the input audio signal should be shifted.
+            
 
         Returns:
             ndarray: Audio signal with pitch shifted.
@@ -517,7 +536,8 @@ class KWS:
 
     def augment(self, audio, fs, verbose=False):
         """
-        Augments the input audio signal by adding random noise, shifting, stretching, echo, pitch shifting, and reverberation effects.
+        Augments the input audio signal by adding random noise, shifting, stretching, echo, pitch shifting, and
+        reverberation effects.
 
         Parameters:
         audio (ndarray): The input audio signal.
@@ -531,18 +551,21 @@ class KWS:
         ValueError: If the input audio signal is empty or the sampling rate is not positive.
         """
 
+        # generate random augmentation parameters
+        # random number generator should exclude some specific values as those values 
+        # has no effect on augmentation 
         random_noise_var_coeff = np.random.uniform(self.augmentation['noise_var']['min'],
                                                    self.augmentation['noise_var']['max'])
-        random_shift_time = np.random.uniform(self.augmentation['shift']['min'],
-                                              self.augmentation['shift']['max'])
-        random_strech_coeff = np.random.uniform(self.augmentation['strech']['min'],
-                                                self.augmentation['strech']['max'])
+        random_shift_time = random_with_exclude(self.augmentation['shift']['min'],
+                                              self.augmentation['shift']['max'], exclude=0)
+        random_strech_coeff = random_with_exclude(self.augmentation['strech']['min'],
+                                                self.augmentation['strech']['max'], exclude=1)
         random_echo_delay = np.random.uniform(self.augmentation['echo_delay']['min'],
                                               self.augmentation['echo_delay']['max'])
         random_echo_decay = np.random.uniform(self.augmentation['echo_decay']['min'],
                                               self.augmentation['echo_decay']['max'])
-        random_pitch_shift = np.random.uniform(self.augmentation['pitch_shift']['min'],
-                                               self.augmentation['pitch_shift']['max'])
+        random_pitch_shift = random_with_exclude(self.augmentation['pitch_shift']['min'],
+                                               self.augmentation['pitch_shift']['max'], exclude=0)
         random_reverberation_room_size = np.random.uniform(self.augmentation['reverberation_room_size']['min'],
                                                            self.augmentation['reverberation_room_size']['max'])
         random_reverberation_time = np.random.uniform(self.augmentation['reverberation_time']['min'],
@@ -572,16 +595,16 @@ class KWS:
         # generate random augmentation parameters
         random_noise_var_coeff = np.random.uniform(self.augmentation['noise_var']['min'],
                                                    self.augmentation['noise_var']['max'])
-        random_shift_time = np.random.uniform(self.augmentation['shift']['min'],
-                                              self.augmentation['shift']['max'])
-        random_strech_coeff = np.random.uniform(self.augmentation['strech']['min'],
-                                                self.augmentation['strech']['max'])
+        random_shift_time = random_with_exclude(self.augmentation['shift']['min'],
+                                              self.augmentation['shift']['max'], exclude=0)
+        random_strech_coeff = random_with_exclude(self.augmentation['strech']['min'],
+                                                self.augmentation['strech']['max'], exclude=1)
         random_echo_delay = np.random.uniform(self.augmentation['echo_delay']['min'],
                                               self.augmentation['echo_delay']['max'])
         random_echo_decay = np.random.uniform(self.augmentation['echo_decay']['min'],
                                               self.augmentation['echo_decay']['max'])
-        random_pitch_shift = np.random.uniform(self.augmentation['pitch_shift']['min'],
-                                               self.augmentation['pitch_shift']['max'])
+        random_pitch_shift = random_with_exclude(self.augmentation['pitch_shift']['min'],
+                                               self.augmentation['pitch_shift']['max'], exclude=0)
         random_reverberation_room_size = np.random.uniform(self.augmentation['reverberation_room_size']['min'],
                                                            self.augmentation['reverberation_room_size']['max'])
         random_reverberation_time = np.random.uniform(self.augmentation['reverberation_time']['min'],
